@@ -24,7 +24,7 @@ export const Navigation = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="text-2xl font-bold text-primary hover:opacity-80 transition-opacity">
-            InnovateCorp
+            Slash Labs
           </Link>
 
           {/* Desktop Navigation */}
