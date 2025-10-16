@@ -1,151 +1,367 @@
-import { Code, Workflow, Zap, Cloud, Settings, BarChart } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { Database, Code2, TrendingUp, Users, Target, Eye, Star, Settings, BookOpen } from 'lucide-react';
+import { contentApi, WebsiteContent } from '../services/contentApi';
 
-const services = [
-  {
-    icon: <Code className="w-12 h-12 text-primary" />,
-    title: "SAP ABAP Development & Customization",
-    description: "Custom reports and interfaces, enhancements (BAdIs, User Exits), forms (Smart Forms, Adobe Forms), and workflow implementation",
-  },
-  {
-    icon: <Workflow className="w-12 h-12 text-primary" />,
-    title: "System Integration & Connectivity",
-    description: "SAP PI/PO, REST/SOAP integrations ensuring unified data flow across all enterprise systems",
-  },
-  {
-    icon: <Zap className="w-12 h-12 text-primary" />,
-    title: "Performance Tuning & Optimization",
-    description: "Database access optimization, custom code efficiency improvements, and architecture enhancements for speed and reliability",
-  },
-  {
-    icon: <Cloud className="w-12 h-12 text-primary" />,
-    title: "S/4HANA Readiness & Migration",
-    description: "S/4HANA readiness assessments, custom code remediation using ATC tools, and cloud integration with SAP BTP enablement",
-  },
-  {
-    icon: <Settings className="w-12 h-12 text-primary" />,
-    title: "Custom Development & Enhancement",
-    description: "Tailored SAP development solutions built to your exact specifications with focus on scalability and maintainability",
-  },
-  {
-    icon: <BarChart className="w-12 h-12 text-primary" />,
-    title: "Technical Optimization & Support",
-    description: "Ongoing technical support, system monitoring, and continuous optimization to ensure maximum ROI on SAP investment",
-  },
-];
+// Icon mapping for dynamic icons
+const iconMap: { [key: string]: React.ComponentType<any> } = {
+  Database,
+  Code2,
+  TrendingUp,
+  Users,
+  Target,
+  Eye,
+  Star,
+  Settings,
+  BookOpen
+};
 
-const Services = () => {
+const Services: React.FC = () => {
+  const { category } = useParams<{ category?: string }>();
+  const [content, setContent] = useState<WebsiteContent | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  // Set initial active category based on URL parameter
+  const getInitialCategory = (): 'all' | 'technical' | 'functional' => {
+    if (category === 'technical') return 'technical';
+    if (category === 'functional') return 'functional';
+    return 'all';
+  };
+  
+  const [activeCategory, setActiveCategory] = useState<'all' | 'technical' | 'functional'>(getInitialCategory);
+
+  useEffect(() => {
+    const loadContent = async () => {
+      try {
+        const data = await contentApi.getContent();
+        setContent(data);
+      } catch (error) {
+        console.error('Failed to load content:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadContent();
+  }, []);
+
+  // Update active category when URL parameter changes
+  useEffect(() => {
+    setActiveCategory(getInitialCategory());
+  }, [category]);
+
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!content) {
+    return (
+      <div className="error-container">
+        <p>Failed to load content. Please try again later.</p>
+      </div>
+    );
+  }
+
+  // Get services from dedicated fields first, fallback to whatWeDo with category filter
+  const technicalServices = content.technicalServices?.length > 0 
+    ? content.technicalServices 
+    : content.whatWeDo.filter(service => service.category === 'technical');
+  const functionalServices = content.functionalServices?.length > 0 
+    ? content.functionalServices 
+    : content.whatWeDo.filter(service => service.category === 'functional');
+
+  const getFilteredServices = () => {
+    switch (activeCategory) {
+      case 'technical':
+        return technicalServices;
+      case 'functional':
+        return functionalServices;
+      default:
+        return content.whatWeDo;
+    }
+  };
+
   return (
-    <div className="min-h-screen py-20">
-      <div className="container mx-auto px-4">
-        {/* Header */}
-        <div className="max-w-3xl mx-auto text-center mb-16 animate-fade-in-up">
-          <h1 className="text-5xl font-bold mb-6">
-            SAP Technical <span className="text-primary">Consulting</span>
-          </h1>
-          <p className="text-xl text-muted-foreground">
-            Slash Labs is a specialized IT solutions provider dedicated to optimizing enterprise resource 
-            planning (ERP) landscapes. We combine deep local expertise with global technical best practices 
-            to transform and enhance your SAP ecosystem.
-          </p>
-        </div>
-
-        {/* Intro Section */}
-        <section className="mb-16 animate-fade-in">
-          <div className="bg-card rounded-2xl p-10 border-2 border-primary/30 shadow-lg">
-            <h2 className="text-2xl font-bold mb-4 text-primary">Our Approach</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              We serve as the technical backbone for enterprise systems, ensuring they are robust, scalable, 
-              and fully aligned with business objectives. Our core strength lies in transforming SAP ecosystems 
-              to enable maximum return on investment through tailored development and strategic system management.
+    <div className="services-page">
+      {/* Hero Section */}
+      <section className="services-hero">
+        <div className="container">
+          <div className="hero-content">
+            <h1 className="page-title">Our Services</h1>
+            <p className="page-subtitle">
+              Comprehensive SAP solutions covering both technical development and functional expertise 
+              to drive your business transformation
             </p>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Services Grid */}
-        <section className="mb-16">
-          <h2 className="text-3xl font-bold text-center mb-12 animate-fade-in">Core SAP Technical Services</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {services.map((service, index) => (
-              <div
-                key={index}
-                className="bg-card p-8 rounded-xl border border-border hover:border-primary/50 transition-all hover:scale-105 animate-fade-in"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <div className="mb-6">{service.icon}</div>
-                <h3 className="text-xl font-bold mb-4">{service.title}</h3>
-                <p className="text-muted-foreground leading-relaxed">{service.description}</p>
-              </div>
-            ))}
+      {/* Filter Tabs */}
+      <section className="services-filter">
+        <div className="container">
+          <div className="filter-tabs">
+            <Link 
+              to="/services"
+              className={`filter-tab ${activeCategory === 'all' ? 'active' : ''}`}
+            >
+              All Services ({content.whatWeDo.length})
+            </Link>
+            <Link 
+              to="/services/technical"
+              className={`filter-tab ${activeCategory === 'technical' ? 'active' : ''}`}
+            >
+              Technical ({technicalServices.length})
+            </Link>
+            <Link 
+              to="/services/functional"
+              className={`filter-tab ${activeCategory === 'functional' ? 'active' : ''}`}
+            >
+              Functional ({functionalServices.length})
+            </Link>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Advanced Capabilities */}
-        <section className="mb-16 animate-fade-in">
-          <div className="bg-secondary rounded-2xl p-10 border border-border">
-            <h2 className="text-3xl font-bold mb-8 text-center">Advanced SAP Capabilities</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div>
-                <h3 className="text-xl font-semibold mb-4 text-primary">S/4HANA Readiness</h3>
-                <ul className="space-y-3">
-                  <li className="flex items-start">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0" />
-                    <span className="text-muted-foreground">Comprehensive readiness assessments</span>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0" />
-                    <span className="text-muted-foreground">Custom code remediation using ATC tools</span>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0" />
-                    <span className="text-muted-foreground">Migration planning and execution</span>
-                  </li>
-                </ul>
+      {/* Services Grid */}
+      <section className="services-content">
+        <div className="container">
+          {activeCategory === 'all' && (
+            <>
+              {/* Technical Services Section */}
+              <div className="services-category">
+                <div className="category-header">
+                  <h2 className="category-title">
+                    <Settings className="category-icon" />
+                    Technical Services
+                  </h2>
+                  <p className="category-description">
+                    Development, integration, and technical optimization services
+                  </p>
+                </div>
+                <div className="services-grid">
+              {technicalServices.map((service) => {
+                const IconComponent = iconMap[service.icon] || Star;
+                return (
+                  <div key={service.id} className="service-card">
+                    <div className="service-icon">
+                      <IconComponent size={48} />
+                    </div>
+                    <h3 className="service-title">{service.title}</h3>
+                    <p className="service-description">{service.description}</p>
+                    
+                    {/* Enhanced content for technical services */}
+                    {'technologies' in service && service.technologies && service.technologies.length > 0 && (
+                      <div className="service-tech-stack">
+                        <h4 className="tech-label">Technologies:</h4>
+                        <div className="tech-tags">
+                          {service.technologies.map((tech, index) => (
+                            <span key={index} className="tech-tag">{tech}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {'features' in service && service.features && service.features.length > 0 && (
+                      <div className="service-features">
+                        <h4 className="features-label">Key Features:</h4>
+                        <ul className="features-list">
+                          {service.features.map((feature, index) => (
+                            <li key={index} className="feature-item">{feature}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    <div className="service-category-badge technical">Technical</div>
+                  </div>
+                );
+              })}
+                </div>
               </div>
-              <div>
-                <h3 className="text-xl font-semibold mb-4 text-primary">Cloud & Integration</h3>
-                <ul className="space-y-3">
-                  <li className="flex items-start">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0" />
-                    <span className="text-muted-foreground">SAP BTP enablement and setup</span>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0" />
-                    <span className="text-muted-foreground">Cloud integration architecture</span>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0" />
-                    <span className="text-muted-foreground">Hybrid landscape optimization</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
 
-        {/* Value Proposition */}
-        <section className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-2xl p-12 text-center animate-fade-in border-2 border-primary/30">
-          <h2 className="text-3xl font-bold mb-4">Why Choose Slash Labs for SAP?</h2>
-          <p className="text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-            We combine technical excellence with strategic thinking to ensure your SAP systems deliver 
-            maximum business value. Our team brings deep expertise in ABAP development, system integration, 
-            and performance optimization to every project.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto text-left">
-            <div className="bg-card p-6 rounded-xl">
-              <h4 className="font-semibold mb-2 text-primary">Technical Excellence</h4>
-              <p className="text-sm text-muted-foreground">Deep ABAP expertise and SAP best practices</p>
+              {/* Functional Services Section */}
+              <div className="services-category">
+                <div className="category-header">
+                  <h2 className="category-title">
+                    <BookOpen className="category-icon" />
+                    Functional Services
+                  </h2>
+                  <p className="category-description">
+                    Business process optimization and SAP functional module expertise
+                  </p>
+                </div>
+                <div className="services-grid">
+              {functionalServices.map((service) => {
+                const IconComponent = iconMap[service.icon] || Star;
+                const getBusinessAreaLabel = (area: string) => {
+                  const labels = {
+                    sales: 'Sales & Distribution',
+                    finance: 'Finance & Control',
+                    material: 'Material Management',
+                    other: 'Other'
+                  };
+                  return labels[area as keyof typeof labels] || area;
+                };
+                
+                const getBusinessAreaColor = (area: string) => {
+                  const colors = {
+                    sales: 'sales-area',
+                    finance: 'finance-area',
+                    material: 'material-area',
+                    other: 'other-area'
+                  };
+                  return colors[area as keyof typeof colors] || 'other-area';
+                };
+                
+                return (
+                  <div key={service.id} className="service-card">
+                    <div className="service-icon">
+                      <IconComponent size={48} />
+                    </div>
+                    <h3 className="service-title">{service.title}</h3>
+                    <p className="service-description">{service.description}</p>
+                    
+                    {/* Enhanced content for functional services */}
+                    {'businessArea' in service && service.businessArea && (
+                      <div className="business-area">
+                        <span className={`business-area-badge ${getBusinessAreaColor(service.businessArea)}`}>
+                          {getBusinessAreaLabel(service.businessArea)}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {'modules' in service && service.modules && service.modules.length > 0 && (
+                      <div className="service-modules">
+                        <h4 className="modules-label">Modules:</h4>
+                        <ul className="modules-list">
+                          {service.modules.map((module, index) => (
+                            <li key={index} className="module-item">{module}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    <div className="service-category-badge functional">Functional</div>
+                  </div>
+                );
+              })}
+                </div>
+              </div>
+            </>
+          )}
+
+          {activeCategory !== 'all' && (
+            <div className="services-grid">
+              {getFilteredServices().map((service) => {
+                const IconComponent = iconMap[service.icon] || Star;
+                
+                // Helper functions for functional services
+                const getBusinessAreaLabel = (area: string) => {
+                  const labels = {
+                    sales: 'Sales & Distribution',
+                    finance: 'Finance & Control',
+                    material: 'Material Management',
+                    other: 'Other'
+                  };
+                  return labels[area as keyof typeof labels] || area;
+                };
+                
+                const getBusinessAreaColor = (area: string) => {
+                  const colors = {
+                    sales: 'sales-area',
+                    finance: 'finance-area',
+                    material: 'material-area',
+                    other: 'other-area'
+                  };
+                  return colors[area as keyof typeof colors] || 'other-area';
+                };
+                
+                return (
+                  <div key={service.id} className="service-card">
+                    <div className="service-icon">
+                      <IconComponent size={48} />
+                    </div>
+                    <h3 className="service-title">{service.title}</h3>
+                    <p className="service-description">{service.description}</p>
+                    
+                    {/* Enhanced content for technical services */}
+                    {activeCategory === 'technical' && 'technologies' in service && service.technologies && service.technologies.length > 0 && (
+                      <div className="service-tech-stack">
+                        <h4 className="tech-label">Technologies:</h4>
+                        <div className="tech-tags">
+                          {service.technologies.map((tech, index) => (
+                            <span key={index} className="tech-tag">{tech}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {activeCategory === 'technical' && 'features' in service && service.features && service.features.length > 0 && (
+                      <div className="service-features">
+                        <h4 className="features-label">Key Features:</h4>
+                        <ul className="features-list">
+                          {service.features.map((feature, index) => (
+                            <li key={index} className="feature-item">{feature}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {/* Enhanced content for functional services */}
+                    {activeCategory === 'functional' && 'businessArea' in service && service.businessArea && (
+                      <div className="business-area">
+                        <span className={`business-area-badge ${getBusinessAreaColor(service.businessArea)}`}>
+                          {getBusinessAreaLabel(service.businessArea)}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {activeCategory === 'functional' && 'modules' in service && service.modules && service.modules.length > 0 && (
+                      <div className="service-modules">
+                        <h4 className="modules-label">Modules:</h4>
+                        <ul className="modules-list">
+                          {service.modules.map((module, index) => (
+                            <li key={index} className="module-item">{module}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    <div className={`service-category-badge ${activeCategory}`}>
+                      {activeCategory === 'technical' ? 'Technical' : 'Functional'}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <div className="bg-card p-6 rounded-xl">
-              <h4 className="font-semibold mb-2 text-primary">Business Focus</h4>
-              <p className="text-sm text-muted-foreground">Solutions aligned with your strategic goals</p>
-            </div>
-            <div className="bg-card p-6 rounded-xl">
-              <h4 className="font-semibold mb-2 text-primary">Proven Results</h4>
-              <p className="text-sm text-muted-foreground">Track record with global enterprises</p>
+          )}
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="services-cta">
+        <div className="container">
+          <div className="cta-content">
+            <h2 className="cta-title">Ready to Get Started?</h2>
+            <p className="cta-description">
+              Let's discuss how our technical and functional expertise can help transform your business
+            </p>
+            <div className="cta-buttons">
+              <a href="/contact" className="cta-button primary">
+                Contact Us
+              </a>
+              <a href="/about" className="cta-button secondary">
+                Learn More About Us
+              </a>
             </div>
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
     </div>
   );
 };

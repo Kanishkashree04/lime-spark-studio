@@ -1,178 +1,185 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Mail, Globe, MapPin } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import React, { useState, useEffect } from 'react';
+import { Mail, Globe, MapPin, Phone, MessageSquare, Star } from 'lucide-react';
+import { contentApi, WebsiteContent } from '../services/contentApi';
 
-const Contact = () => {
-  const { toast } = useToast();
+// Icon mapping for dynamic icons
+const iconMap: { [key: string]: React.ComponentType<any> } = {
+  Mail,
+  Globe,
+  MapPin,
+  Phone,
+  MessageSquare,
+  Star
+};
+
+const Contact: React.FC = () => {
+  const [content, setContent] = useState<WebsiteContent | null>(null);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    subject: "",
-    message: "",
+    name: '',
+    email: '',
+    subject: '',
+    message: ''
   });
+
+  useEffect(() => {
+    const loadContent = async () => {
+      try {
+        const data = await contentApi.getContent();
+        setContent(data);
+      } catch (error) {
+        console.error('Failed to load content:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadContent();
+  }, []);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Message Sent!",
-      description: "Thank you for contacting Slash Labs. We'll get back to you soon.",
+    // TODO: Implement form submission
+    alert('Thank you for your message! We will get back to you soon.');
+    setFormData({
+      name: '',
+      email: '',
+      subject: '',
+      message: ''
     });
-    setFormData({ name: "", email: "", subject: "", message: "" });
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!content) {
+    return (
+      <div className="error-container">
+        <p>Failed to load content. Please try again later.</p>
+      </div>
+    );
+  }
+
+  const { contact } = content;
 
   return (
-    <div className="min-h-screen py-20">
-      <div className="container mx-auto px-4">
-        {/* Header */}
-        <div className="max-w-3xl mx-auto text-center mb-16 animate-fade-in-up">
-          <h1 className="text-5xl font-bold mb-6">
-            Contact <span className="text-primary">Slash Labs</span>
-          </h1>
-          <p className="text-xl text-muted-foreground">
-            Let's discuss how we can elevate your SAP landscape or build your next digital solution. 
-            Reach out to our consulting team.
-          </p>
+    <div className="contact">
+      {/* Header Section */}
+      <section className="contact-header">
+        <div className="container">
+          <h1 className="page-title">{contact.header.title}</h1>
+          <p className="page-subtitle">{contact.header.subtitle}</p>
         </div>
+      </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
-          {/* Contact Info Cards */}
-          <div className="lg:col-span-1 space-y-6">
-            {[
-              {
-                icon: <Mail className="w-6 h-6" />,
-                title: "Email",
-                content: "contact@slashlabs.tech",
-                link: "mailto:contact@slashlabs.tech",
-              },
-              {
-                icon: <Globe className="w-6 h-6" />,
-                title: "Website",
-                content: "www.slashlabs.tech",
-                link: "https://www.slashlabs.tech",
-              },
-              {
-                icon: <MapPin className="w-6 h-6" />,
-                title: "Location",
-                content: "Sivakasi, Tamil Nadu, India",
-                link: null,
-              },
-            ].map((item, index) => (
-              <div
-                key={index}
-                className="bg-card p-6 rounded-xl border-2 border-border hover:border-primary/50 transition-all animate-fade-in shadow-lg"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <div className="flex items-center mb-3">
-                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center text-primary mr-3">
-                    {item.icon}
-                  </div>
-                  <h3 className="font-semibold text-lg">{item.title}</h3>
-                </div>
-                {item.link ? (
-                  <a 
-                    href={item.link} 
-                    className="text-muted-foreground hover:text-primary transition-colors block break-words"
-                    target={item.link.startsWith('http') ? '_blank' : undefined}
-                    rel={item.link.startsWith('http') ? 'noopener noreferrer' : undefined}
-                  >
-                    {item.content}
-                  </a>
-                ) : (
-                  <p className="text-muted-foreground">{item.content}</p>
-                )}
+      <div className="contact-content">
+        <div className="container">
+          <div className="contact-grid">
+            {/* Contact Information */}
+            <div className="contact-info-section">
+              <h2 className="section-title">Get in Touch</h2>
+              <div className="contact-info-cards">
+                {contact.contactInfo.map((info) => {
+                  const IconComponent = iconMap[info.icon] || Star;
+                  
+                  const content = info.link ? (
+                    <a href={info.link} className="contact-link">
+                      {info.content}
+                    </a>
+                  ) : (
+                    <span className="contact-text">{info.content}</span>
+                  );
+
+                  return (
+                    <div key={info.id} className="contact-info-card">
+                      <div className="contact-info-icon">
+                        <IconComponent size={24} />
+                      </div>
+                      <div className="contact-info-content">
+                        <h3 className="contact-info-title">{info.title}</h3>
+                        {content}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
+            </div>
 
-          {/* Contact Form */}
-          <div className="lg:col-span-2">
-            <form onSubmit={handleSubmit} className="bg-card p-8 md:p-10 rounded-xl border-2 border-border animate-fade-in shadow-lg">
-              <h2 className="text-2xl font-bold mb-6">Send Us a Message</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium mb-2">
-                    Name *
-                  </label>
-                  <Input
+            {/* Contact Form */}
+            <div className="contact-form-section">
+              <h2 className="section-title">{contact.form.title}</h2>
+              <form onSubmit={handleSubmit} className="contact-form">
+                <div className="form-group">
+                  <label htmlFor="name" className="form-label">Name *</label>
+                  <input
+                    type="text"
                     id="name"
                     name="name"
+                    className="form-input"
                     value={formData.name}
-                    onChange={handleChange}
-                    placeholder="Your name"
+                    onChange={handleInputChange}
                     required
-                    className="bg-background border-border"
                   />
                 </div>
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium mb-2">
-                    Email *
-                  </label>
-                  <Input
+
+                <div className="form-group">
+                  <label htmlFor="email" className="form-label">Email *</label>
+                  <input
+                    type="email"
                     id="email"
                     name="email"
-                    type="email"
+                    className="form-input"
                     value={formData.email}
-                    onChange={handleChange}
-                    placeholder="your@email.com"
+                    onChange={handleInputChange}
                     required
-                    className="bg-background border-border"
                   />
                 </div>
-              </div>
-              <div className="mb-6">
-                <label htmlFor="subject" className="block text-sm font-medium mb-2">
-                  Subject *
-                </label>
-                <Input
-                  id="subject"
-                  name="subject"
-                  value={formData.subject}
-                  onChange={handleChange}
-                  placeholder="How can we help?"
-                  required
-                  className="bg-background border-border"
-                />
-              </div>
-              <div className="mb-6">
-                <label htmlFor="message" className="block text-sm font-medium mb-2">
-                  Message *
-                </label>
-                <Textarea
-                  id="message"
-                  name="message"
-                  value={formData.message}
-                  onChange={handleChange}
-                  placeholder="Tell us more about your project or inquiry..."
-                  rows={6}
-                  required
-                  className="bg-background border-border"
-                />
-              </div>
-              <Button 
-                type="submit" 
-                size="lg" 
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-              >
-                Send Message
-              </Button>
-            </form>
-          </div>
-        </div>
 
-        {/* Additional Info */}
-        <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-2xl p-12 text-center animate-fade-in border-2 border-primary/30">
-          <h2 className="text-3xl font-bold mb-4">Founded January 16, 2024</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Based in Sivakasi, Tamil Nadu, Slash Labs combines deep local expertise with a global perspective 
-            on technical best practices, serving as the technical backbone for businesses worldwide.
-          </p>
+                <div className="form-group">
+                  <label htmlFor="subject" className="form-label">Subject</label>
+                  <input
+                    type="text"
+                    id="subject"
+                    name="subject"
+                    className="form-input"
+                    value={formData.subject}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="message" className="form-label">Message *</label>
+                  <textarea
+                    id="message"
+                    name="message"
+                    className="form-textarea"
+                    rows={6}
+                    value={formData.message}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+
+                <button type="submit" className="form-submit">
+                  {contact.form.submitButton}
+                </button>
+              </form>
+            </div>
+          </div>
         </div>
       </div>
     </div>

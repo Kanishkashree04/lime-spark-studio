@@ -1,134 +1,177 @@
-import { Car, Users, Briefcase, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import { ExternalLink, Tag, Calendar, Cpu } from 'lucide-react';
+import { contentApi } from '../services/contentApi';
 
-const products = [
-  {
-    icon: <Car className="w-12 h-12 text-primary" />,
-    name: "7Cars-Autodoc",
-    subtitle: "Car Service & Workshop Management Platform",
-    description: "Comprehensive car service and workshop management system designed to help service centers manage bookings, inventory, and payments efficiently.",
-    features: [
-      "Vehicle registration and service tracking",
-      "Diagnostic reports and pricing management",
-      "Real-time analytics and revenue reports",
-      "Payment integration and notifications",
-    ],
-    tech: "Node.js, Express.js, React.js, PostgreSQL, AWS S3, Firebase",
-  },
-  {
-    icon: <Users className="w-12 h-12 text-primary" />,
-    name: "ActorsConnect",
-    subtitle: "Professional Networking for Entertainment Industry",
-    description: "Specialized networking platform connecting actors, casting directors, and production houses for seamless talent discovery and casting workflows.",
-    features: [
-      "Professional profiles with headshots and showreels",
-      "Casting management and audition scheduling",
-      "In-app messaging and reminders",
-      "Admin verification and analytics",
-    ],
-    tech: "React.js, Node.js, PostgreSQL, Cloudinary, ElasticSearch",
-  },
-  {
-    icon: <Briefcase className="w-12 h-12 text-primary" />,
-    name: "Payroll Management System",
-    subtitle: "HR & Employee Administration",
-    description: "Complete HR and payroll automation solution for SMEs managing attendance, salary computation, tax deductions, and compliance.",
-    features: [
-      "Employee master data and attendance tracking",
-      "Automatic salary generation and payslips",
-      "PF, ESI, and tax calculation automation",
-      "Admin dashboards for HR operations",
-    ],
-    tech: "React.js, Node.js, MongoDB",
-  },
-  {
-    icon: <Sparkles className="w-12 h-12 text-primary" />,
-    name: "Crackers ERP",
-    subtitle: "Inventory & Billing for Fireworks Sellers",
-    description: "Specialized enterprise solution for fireworks sellers in Sivakasi, streamlining stock management, order processing, and sales billing.",
-    features: [
-      "Stock tracking and order handling",
-      "Automatic WhatsApp & Email invoicing",
-      "Safety documentation and compliance",
-      "Real-time dashboards and reporting",
-    ],
-    tech: "Angular, Node.js, PostgreSQL",
-  },
-];
+interface Product {
+  id: string;
+  name: string;
+  subtitle: string;
+  description: string;
+  category: string;
+  price?: string;
+  icon?: string;
+  keyHighlights?: string[];
+  technicalStack?: string;
+  status: 'active' | 'inactive' | 'draft';
+  dateAdded: string;
+  dateUpdated?: string;
+}
 
-const Products = () => {
+const Products: React.FC = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const activeProducts = await contentApi.getActiveProducts();
+        setProducts(activeProducts || []);
+      } catch (error) {
+        console.error('Failed to load products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProducts();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Loading products...</p>
+      </div>
+    );
+  }
+
+  // Get unique categories
+  const categories = ['', ...Array.from(new Set(products.map(p => p.category)))];
+  
+  // Filter products by category
+  const filteredProducts = selectedCategory 
+    ? products.filter(product => product.category === selectedCategory)
+    : products;
+
   return (
-    <div className="min-h-screen py-20">
-      <div className="container mx-auto px-4">
-        {/* Header */}
-        <div className="max-w-3xl mx-auto text-center mb-16 animate-fade-in-up">
-          <h1 className="text-5xl font-bold mb-6">
-            Open Source <span className="text-primary">Development</span>
-          </h1>
-          <p className="text-xl text-muted-foreground">
-            Slash Labs' Open Source Division focuses on developing high-impact digital products using 
-            cutting-edge frameworks and open technologies. We've successfully completed four major projects since inception.
+    <div className="products">
+      {/* Header Section */}
+      <section className="products-header">
+        <div className="container">
+          <h1 className="page-title">Our Products</h1>
+          <p className="page-subtitle">
+            Discover our innovative software solutions designed to transform your business operations
           </p>
         </div>
+      </section>
 
-        {/* Products Grid */}
-        <div className="space-y-12 mb-16">
-          {products.map((product, index) => (
-            <div
-              key={index}
-              className="bg-card p-8 md:p-10 rounded-2xl border-2 border-border hover:border-primary/50 transition-all animate-fade-in shadow-lg"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              <div className="flex flex-col md:flex-row gap-8">
-                <div className="flex-shrink-0">
-                  <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center">
-                    {product.icon}
-                  </div>
-                </div>
-                
-                <div className="flex-grow">
-                  <h3 className="text-3xl font-bold mb-2">{product.name}</h3>
-                  <p className="text-primary font-semibold mb-4">{product.subtitle}</p>
-                  <p className="text-muted-foreground mb-6 leading-relaxed">{product.description}</p>
-                  
-                  <div className="mb-6">
-                    <h4 className="font-semibold mb-3 text-foreground">Key Highlights:</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {product.features.map((feature, idx) => (
-                        <div key={idx} className="flex items-start">
-                          <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 mr-3 flex-shrink-0" />
-                          <span className="text-sm text-muted-foreground">{feature}</span>
+      {/* Filter Section */}
+      {categories.length > 2 && (
+        <section className="products-filter">
+          <div className="container">
+            <div className="filter-controls">
+              <label className="filter-label">Filter by category:</label>
+              <select 
+                className="category-select"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+              >
+                <option value="">All Categories</option>
+                {categories.slice(1).map(category => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Products Grid */}
+      <section className="products-grid-section">
+        <div className="container">
+          {filteredProducts.length === 0 ? (
+            <div className="no-products">
+              <p>No products available at the moment. Please check back later.</p>
+            </div>
+          ) : (
+            <div className="products-grid">
+              {filteredProducts.map((product) => (
+                <div key={product.id} className="product-card">
+                  <div className="product-header">
+                    <div className="product-icon-container">
+                      {product.icon ? (
+                        product.icon.startsWith('http') || product.icon.startsWith('<svg') ? (
+                          product.icon.startsWith('<svg') ? (
+                            <div 
+                              className="product-icon-svg" 
+                              dangerouslySetInnerHTML={{ __html: product.icon }}
+                            />
+                          ) : (
+                            <img src={product.icon} alt={`${product.name} icon`} className="product-icon-image" />
+                          )
+                        ) : (
+                          <span className="product-icon-emoji">{product.icon}</span>
+                        )
+                      ) : (
+                        <div className="product-icon-default">
+                          <ExternalLink size={32} />
                         </div>
-                      ))}
+                      )}
+                    </div>
+                    <div className="product-category-badge">
+                      <Tag size={14} />
+                      {product.category}
                     </div>
                   </div>
-
-                  <div className="bg-secondary p-4 rounded-lg">
-                    <p className="text-sm">
-                      <span className="font-semibold text-foreground">Technical Stack: </span>
-                      <span className="text-muted-foreground">{product.tech}</span>
-                    </p>
+                  
+                  <div className="product-content">
+                    <h3 className="product-name">{product.name}</h3>
+                    <p className="product-subtitle">{product.subtitle}</p>
+                    <p className="product-description">{product.description}</p>
+                    
+                    {product.keyHighlights && product.keyHighlights.length > 0 && (
+                      <div className="product-highlights">
+                        <h4 className="highlights-title">Key Features:</h4>
+                        <ul className="highlights-list">
+                          {product.keyHighlights.map((highlight, index) => (
+                            <li key={index} className="highlight-item">{highlight}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {product.technicalStack && (
+                      <div className="product-tech-stack">
+                        <div className="tech-stack-header">
+                          <Cpu size={16} />
+                          <span className="tech-stack-label">Technology Stack:</span>
+                        </div>
+                        <p className="tech-stack-content">{product.technicalStack}</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="product-footer">
+                    <div className="product-meta">
+                      <div className="product-date">
+                        <Calendar size={14} />
+                        <span>Added {product.dateAdded}</span>
+                      </div>
+                      {product.price && (
+                        <div className="product-price">
+                          <span className="price-label">Pricing:</span>
+                          <span className="price-value">{product.price}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
-
-        {/* CTA Section */}
-        <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-2xl p-12 text-center border-2 border-primary/30 animate-fade-in">
-          <h2 className="text-3xl font-bold mb-4">Need a Custom Solution?</h2>
-          <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Our team can develop tailored open-source solutions to meet your specific business requirements
-          </p>
-          <Link to="/contact">
-            <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
-              Discuss Your Project
-            </Button>
-          </Link>
-        </div>
-      </div>
+      </section>
     </div>
   );
 };

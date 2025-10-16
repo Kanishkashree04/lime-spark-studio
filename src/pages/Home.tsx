@@ -1,110 +1,153 @@
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, Code2, Database, TrendingUp, Users } from "lucide-react";
-import heroBg from "@/assets/hero-bg.jpg";
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowRight, Database, Code2, Lightbulb, Award, TrendingUp, Users, Target, Eye, Star } from 'lucide-react';
+import { contentApi, WebsiteContent } from '../services/contentApi';
 
-const Home = () => {
+// Icon mapping for dynamic icons
+const iconMap: { [key: string]: React.ComponentType<any> } = {
+  Database,
+  Code2,
+  Lightbulb,
+  Award,
+  TrendingUp,
+  Users,
+  Target,
+  Eye,
+  Star
+};
+
+const Home: React.FC = () => {
+  const [content, setContent] = useState<WebsiteContent | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadContent = async () => {
+      try {
+        const data = await contentApi.getContent();
+        setContent(data);
+      } catch (error) {
+        console.error('Failed to load content:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadContent();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!content) {
+    return (
+      <div className="error-container">
+        <p>Failed to load content. Please try again later.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen">
+    <div className="home">
       {/* Hero Section */}
-      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
-        <div 
-          className="absolute inset-0 z-0 opacity-20"
-          style={{
-            backgroundImage: `url(${heroBg})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background z-0" />
-        
-        <div className="container mx-auto px-4 z-10">
-          <div className="max-w-4xl mx-auto text-center space-y-8 animate-fade-in-up">
-            <h1 className="text-5xl md:text-7xl font-bold leading-tight">
-              Welcome to
-              <span className="text-primary"> Slash Labs</span>
-            </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
-              Empowering businesses through innovative SAP solutions and cutting-edge open-source development. 
-              Based in Sivakasi, Tamil Nadu.
-            </p>
-            <p className="text-lg text-muted-foreground">
-              Founded on January 16, 2024
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link to="/contact">
-                <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold group">
-                  Get Started
-                  <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-              <Link to="/products">
-                <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/10">
-                  View Our Work
-                </Button>
+      <section className="hero">
+        <div className="hero-container">
+          <div className="hero-content">
+            <h1 className="hero-title">{content.hero.title}</h1>
+            <p className="hero-subtitle">{content.hero.subtitle}</p>
+            {content.hero.foundedDate && (
+              <p className="hero-founded">{content.hero.foundedDate}</p>
+            )}
+            <Link to="/contact" className="hero-cta">
+              Get Started
+              <ArrowRight className="cta-icon" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* What We Do Section */}
+      <section className="what-we-do">
+        <div className="container">
+          <h2 className="section-title">What We Do</h2>
+          <p className="section-subtitle">
+            We provide comprehensive SAP solutions across technical and functional domains
+          </p>
+          
+          {/* Service Categories Overview */}
+          <div className="service-categories">
+            <div className="category-card">
+              <div className="category-icon">
+                <Database size={40} />
+              </div>
+              <h3 className="category-title">Technical Services</h3>
+              <p className="category-description">
+                ABAP development, system integration, and technical optimization
+              </p>
+              <div className="category-count">
+                {content.whatWeDo.filter(s => s.category === 'technical').length} Services
+              </div>
+            </div>
+            
+            <div className="category-card">
+              <div className="category-icon">
+                <Users size={40} />
+              </div>
+              <h3 className="category-title">Functional Services</h3>
+              <p className="category-description">
+                SAP modules: SD, FI/CO, MM and business process optimization
+              </p>
+              <div className="category-count">
+                {content.whatWeDo.filter(s => s.category === 'functional').length} Services
+              </div>
+            </div>
+          </div>
+          
+          {/* Featured Services Preview */}
+          <div className="services-preview">
+            <h3 className="preview-title">Featured Services</h3>
+            <div className="services-grid">
+              {content.whatWeDo.slice(0, 4).map((service) => {
+                const IconComponent = iconMap[service.icon] || Star;
+                return (
+                  <div key={service.id} className="service-card">
+                    <div className="service-icon">
+                      <IconComponent size={48} />
+                    </div>
+                    <h4 className="service-title">{service.title}</h4>
+                    <p className="service-description">{service.description}</p>
+                    <div className={`service-category-badge ${service.category}`}>
+                      {service.category === 'technical' ? 'Technical' : 'Functional'}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            <div className="services-cta">
+              <Link to="/services" className="view-all-services">
+                View All Services
+                <ArrowRight className="cta-icon" />
               </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* What We Do Section */}
-      <section className="py-20 bg-secondary">
-        <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-4 animate-fade-in">What We Do</h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-3xl mx-auto">
-            We deliver innovative, reliable, and scalable digital solutions across SAP Technical Consulting 
-            and Open Source Development
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {[
-              {
-                icon: <Database className="w-12 h-12 text-primary" />,
-                title: "SAP Technical Consulting",
-                description: "Enterprise-grade SAP ABAP development, system integration, performance optimization, and S/4HANA readiness assessments",
-              },
-              {
-                icon: <Code2 className="w-12 h-12 text-primary" />,
-                title: "Open Source Development",
-                description: "Scalable web and mobile applications using modern frameworks like React, Node.js, Angular, and PostgreSQL",
-              },
-            ].map((feature, index) => (
-              <div
-                key={index}
-                className="bg-card p-8 rounded-xl border border-border hover:border-primary/50 transition-all hover:scale-105 animate-fade-in"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <div className="mb-4">{feature.icon}</div>
-                <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
-                <p className="text-muted-foreground">{feature.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Core Focus Areas */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-12 animate-fade-in">Core Focus Areas</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {[
-              "Building scalable web and mobile applications",
-              "Enterprise-grade SAP development and integration",
-              "Innovation, collaboration, and continuous learning",
-              "End-to-end project delivery with quality assurance",
-              "Supporting digital transformation journeys",
-              "Nurturing rural tech talent for global impact",
-            ].map((focus, index) => (
-              <div
-                key={index}
-                className="bg-card p-6 rounded-xl border border-border hover:border-primary/50 transition-all animate-fade-in"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <div className="flex items-start">
-                  <div className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0" />
-                  <p className="text-muted-foreground">{focus}</p>
-                </div>
+      <section className="focus-areas">
+        <div className="container">
+          <h2 className="section-title">Our Core Focus Areas</h2>
+          <div className="focus-grid">
+            {content.coreFocusAreas.map((focus, index) => (
+              <div key={focus.id} className="focus-item">
+                <div className="focus-number">{index + 1}</div>
+                <p className="focus-text">{focus.text}</p>
               </div>
             ))}
           </div>
@@ -112,39 +155,28 @@ const Home = () => {
       </section>
 
       {/* Stats Section */}
-      <section className="py-20 bg-gradient-to-r from-primary/10 to-primary/5">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center max-w-4xl mx-auto">
-            <div className="animate-fade-in">
-              <div className="text-5xl font-bold text-primary mb-2">4</div>
-              <div className="text-muted-foreground">Major Open Source Projects</div>
-            </div>
-            <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
-              <div className="text-5xl font-bold text-primary mb-2">7+</div>
-              <div className="text-muted-foreground">Strategic Partners & Clients</div>
-            </div>
-            <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
-              <div className="text-5xl font-bold text-primary mb-2">2024</div>
-              <div className="text-muted-foreground">Established & Growing</div>
-            </div>
+      <section className="stats">
+        <div className="container">
+          <div className="stats-grid">
+            {content.stats.map((stat) => (
+              <div key={stat.id} className="stat-item">
+                <div className="stat-number">{stat.number}</div>
+                <div className="stat-label">{stat.label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="bg-card rounded-2xl p-12 text-center border-2 border-primary/30 shadow-lg">
-            <h2 className="text-3xl md:text-5xl font-bold mb-6 animate-fade-in">
-              Ready to Transform Your Business?
-            </h2>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Let's discuss how Slash Labs can elevate your SAP landscape or build your next digital solution
-            </p>
-            <Link to="/contact">
-              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
-                Contact Us Today
-              </Button>
+      {/* Call to Action */}
+      <section className="cta-section">
+        <div className="container">
+          <div className="cta-content">
+            <h2 className="cta-title">{content.cta.title}</h2>
+            <p className="cta-description">{content.cta.description}</p>
+            <Link to="/contact" className="cta-button">
+              {content.cta.buttonText}
+              <ArrowRight className="cta-icon" />
             </Link>
           </div>
         </div>
